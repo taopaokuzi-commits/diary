@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#534AB7">
+<title>灵感日记本</title>
+<style>
+  :root {
+    --purple: #534AB7;
+    --purple-light: #EEEDFE;
+    --purple-mid: #AFA9EC;
+    --purple-dark: #3C3489;
+    --teal-light: #E1F5EE;
+    --teal: #5DCAA5;
+    --teal-dark: #0F6E56;
+    --text: #1a1a1a;
+    --text-2: #666;
+    --text-3: #aaa;
+    --bg: #f7f6fb;
+    --card: #fff;
+    --border: rgba(0,0,0,0.08);
+    --border2: rgba(0,0,0,0.14);
+    --radius: 14px;
+    --radius-sm: 9px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+  /* ---- TOP NAV ---- */
+  .nav { background: var(--card); border-bottom: 0.5px solid var(--border); padding: 14px 18px 10px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+  .nav-left { display: flex; align-items: center; gap: 9px; }
+  .nav-icon { width: 32px; height: 32px; background: var(--purple-light); border-radius: 9px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .nav-title { font-size: 16px; font-weight: 500; color: var(--text); }
+  .nav-sub { font-size: 11px; color: var(--text-3); margin-top: 1px; }
+  .nav-search { width: 32px; height: 32px; border: 0.5px solid var(--border2); border-radius: 50%; display: flex; align-items: center; justify-content: center; background: transparent; cursor: pointer; }
+
+  /* ---- TABS ---- */
+  .tabs { display: flex; background: var(--card); border-bottom: 0.5px solid var(--border); }
+  .tab { flex: 1; text-align: center; padding: 11px 4px; font-size: 13px; color: var(--text-3); cursor: pointer; border-bottom: 2px solid transparent; transition: all .15s; }
+  .tab.on { color: var(--purple); border-bottom-color: var(--purple); font-weight: 500; }
+
+  /* ---- PAGES ---- */
+  .page { display: none; }
+  .page.on { display: block; }
+
+  /* ---- WRITE PAGE ---- */
+  .write-wrap { padding: 16px; }
+  .stats-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; margin-bottom: 16px; }
+  .stat-card { background: var(--card); border-radius: var(--radius-sm); padding: 12px; text-align: center; border: 0.5px solid var(--border); }
+  .stat-num { font-size: 22px; font-weight: 500; color: var(--purple); }
+  .stat-lbl { font-size: 11px; color: var(--text-3); margin-top: 3px; }
+
+  .section-label { font-size: 12px; color: var(--text-3); margin-bottom: 8px; font-weight: 500; }
+
+  .mood-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .mood-btn { font-size: 13px; padding: 7px 14px; border-radius: 20px; border: 0.5px solid var(--border2); background: var(--card); cursor: pointer; color: var(--text-2); transition: all .15s; }
+  .mood-btn.on { background: var(--purple-light); border-color: var(--purple-mid); color: var(--purple-dark); font-weight: 500; }
+
+  .tag-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 16px; }
+  .tag-btn { font-size: 12px; padding: 5px 10px; border-radius: 14px; background: var(--card); color: var(--text-2); cursor: pointer; border: 0.5px solid var(--border2); transition: all .15s; }
+  .tag-btn.on { background: var(--teal-light); border-color: var(--teal); color: var(--teal-dark); }
+
+  .compose-card { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); overflow: hidden; margin-bottom: 16px; }
+  .compose-inner { padding: 14px; }
+  textarea { width: 100%; min-height: 120px; border: none; outline: none; font-size: 15px; font-family: inherit; color: var(--text); line-height: 1.7; resize: none; background: transparent; }
+  .compose-footer { display: flex; align-items: center; justify-content: space-between; padding: 10px 14px; border-top: 0.5px solid var(--border); }
+  .char-count { font-size: 12px; color: var(--text-3); }
+  .save-btn { background: var(--purple); color: #fff; border: none; border-radius: 20px; padding: 9px 22px; font-size: 14px; font-weight: 500; cursor: pointer; font-family: inherit; }
+  .save-btn:active { background: var(--purple-dark); }
+
+  /* ---- READ PAGE ---- */
+  .read-wrap { padding: 14px 16px; }
+
+  .filter-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; overflow-x: auto; padding-bottom: 2px; scrollbar-width: none; }
+  .filter-row::-webkit-scrollbar { display: none; }
+  .filter-chip { font-size: 12px; padding: 5px 12px; border-radius: 14px; border: 0.5px solid var(--border2); background: var(--card); cursor: pointer; color: var(--text-2); white-space: nowrap; flex-shrink: 0; }
+  .filter-chip.on { background: var(--purple); border-color: var(--purple); color: #fff; }
+
+  .entry-list { display: flex; flex-direction: column; gap: 10px; }
+  .entry-card { background: var(--card); border-radius: var(--radius); border: 0.5px solid var(--border); padding: 14px 15px; }
+  .entry-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+  .entry-meta { display: flex; align-items: center; gap: 8px; }
+  .entry-mood { font-size: 11px; padding: 3px 9px; border-radius: 10px; background: var(--purple-light); color: var(--purple-dark); font-weight: 500; }
+  .entry-date { font-size: 11px; color: var(--text-3); }
+  .entry-del { font-size: 12px; color: var(--text-3); background: transparent; border: none; cursor: pointer; padding: 3px 7px; border-radius: 6px; }
+  .entry-del:active { background: #fce; color: #a00; }
+  .entry-text { font-size: 14px; color: var(--text); line-height: 1.75; white-space: pre-wrap; word-break: break-word; }
+  .entry-tags { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 9px; }
+  .entry-tag { font-size: 11px; padding: 3px 8px; border-radius: 9px; background: var(--bg); color: var(--text-3); }
+
+  .empty-tip { text-align: center; padding: 60px 0; color: var(--text-3); font-size: 14px; line-height: 2; }
+  .empty-icon { width: 44px; height: 44px; margin: 0 auto 12px; opacity: .25; }
+
+  /* ---- EXPORT PAGE ---- */
+  .export-wrap { padding: 20px 16px; }
+  .export-title { font-size: 15px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+  .export-desc { font-size: 13px; color: var(--text-2); line-height: 1.6; margin-bottom: 20px; }
+  .export-btn { display: block; width: 100%; padding: 14px; border-radius: var(--radius); border: 0.5px solid var(--border2); background: var(--card); color: var(--text); font-size: 14px; font-family: inherit; cursor: pointer; text-align: left; margin-bottom: 10px; }
+  .export-btn:active { background: var(--purple-light); }
+  .export-btn-main { background: var(--purple); color: #fff; border-color: var(--purple); }
+  .export-btn-main:active { background: var(--purple-dark); }
+  .ebtn-title { font-weight: 500; margin-bottom: 2px; }
+  .ebtn-sub { font-size: 12px; opacity: .7; }
+
+  /* ---- SEARCH OVERLAY ---- */
+  .overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 100; overflow-y: auto; }
+  .overlay.on { display: block; }
+  .overlay-nav { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--card); border-bottom: 0.5px solid var(--border); position: sticky; top: 0; }
+  .overlay-nav input { flex: 1; border: none; outline: none; font-size: 15px; background: transparent; font-family: inherit; }
+  .overlay-close { font-size: 13px; color: var(--purple); cursor: pointer; white-space: nowrap; }
+  .search-results { padding: 14px 16px; display: flex; flex-direction: column; gap: 10px; }
+
+  /* ---- TOAST ---- */
+  .toast { position: fixed; bottom: calc(80px + var(--safe-bottom)); left: 50%; transform: translateX(-50%); background: #222; color: #fff; font-size: 13px; padding: 9px 18px; border-radius: 20px; opacity: 0; pointer-events: none; transition: opacity .18s; z-index: 200; white-space: nowrap; }
+  .toast.v { opacity: 1; }
+
+  /* ---- BOTTOM TAB BAR ---- */
+  .tabbar { position: fixed; bottom: 0; left: 0; right: 0; background: var(--card); border-top: 0.5px solid var(--border); display: flex; padding-bottom: var(--safe-bottom); z-index: 50; }
+  .tb-item { flex: 1; display: flex; flex-direction: column; align-items: center; padding: 10px 4px 8px; cursor: pointer; }
+  .tb-icon { width: 22px; height: 22px; margin-bottom: 3px; }
+  .tb-label { font-size: 10px; color: var(--text-3); }
+  .tb-item.on .tb-label { color: var(--purple); }
+  .tb-item.on .tb-icon path, .tb-item.on .tb-icon circle, .tb-item.on .tb-icon rect { stroke: var(--purple) !important; }
+  .tb-item.on .tb-icon .fill { fill: var(--purple) !important; }
+  .page-scroll { padding-bottom: calc(70px + var(--safe-bottom)); }
+</style>
+</head>
+<body>
+
+<!-- Top nav -->
+<div class="nav">
+  <div class="nav-left">
+    <div class="nav-icon">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <ellipse cx="9" cy="8" rx="5.5" ry="5" fill="#AFA9EC"/>
+        <path d="M6 8.5c.5 1 1.5 1.5 3 1.5s2.5-.5 3-1.5" stroke="#3C3489" stroke-width="1" stroke-linecap="round"/>
+        <circle cx="7" cy="7.5" r=".7" fill="#3C3489"/>
+        <circle cx="11" cy="7.5" r=".7" fill="#3C3489"/>
+        <path d="M8.5 13.5v2.5" stroke="#3C3489" stroke-width="1.2" stroke-linecap="round"/>
+        <path d="M6.5 16h4" stroke="#3C3489" stroke-width="1" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="nav-title">灵感日记本</div>
+      <div class="nav-sub" id="nav-sub">捕捉每一个闪光时刻</div>
+    </div>
+  </div>
+  <button class="nav-search" onclick="openSearch()" aria-label="搜索">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+      <circle cx="6.5" cy="6.5" r="4" stroke="#888" stroke-width="1.3"/>
+      <path d="M10 10l3 3" stroke="#888" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+  </button>
+</div>
+
+<!-- Pages -->
+<div id="pg-write" class="page on">
+  <div class="write-wrap page-scroll">
+    <div class="stats-row">
+      <div class="stat-card"><div class="stat-num" id="s1">0</div><div class="stat-lbl">共记录</div></div>
+      <div class="stat-card"><div class="stat-num" id="s2">0</div><div class="stat-lbl">今日灵感</div></div>
+      <div class="stat-card"><div class="stat-num" id="s3">0</div><div class="stat-lbl">连续天</div></div>
+    </div>
+    <div class="section-label">选择类型</div>
+    <div class="mood-row" id="moods">
+      <button class="mood-btn on" data-v="灵感">灵感</button>
+      <button class="mood-btn" data-v="思考">思考</button>
+      <button class="mood-btn" data-v="梦境">梦境</button>
+      <button class="mood-btn" data-v="观察">观察</button>
+      <button class="mood-btn" data-v="感悟">感悟</button>
+    </div>
+    <div class="section-label">添加标签（可多选）</div>
+    <div class="tag-row" id="tag-row">
+      <button class="tag-btn" data-v="创意">创意</button>
+      <button class="tag-btn" data-v="生活">生活</button>
+      <button class="tag-btn" data-v="工作">工作</button>
+      <button class="tag-btn" data-v="阅读">阅读</button>
+      <button class="tag-btn" data-v="旅行">旅行</button>
+      <button class="tag-btn" data-v="自然">自然</button>
+      <button class="tag-btn" data-v="情绪">情绪</button>
+      <button class="tag-btn" data-v="人际">人际</button>
+    </div>
+    <div class="section-label">写下灵感</div>
+    <div class="compose-card">
+      <div class="compose-inner">
+        <textarea id="ta" placeholder="此刻脑海中浮现了什么？写下来吧..." rows="5"></textarea>
+      </div>
+      <div class="compose-footer">
+        <span class="char-count" id="cc">0 字</span>
+        <button class="save-btn" onclick="save()">记录灵感</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="pg-read" class="page">
+  <div class="read-wrap page-scroll">
+    <div class="filter-row" id="filter-row">
+      <button class="filter-chip on" data-v="全部" onclick="setFilter(this)">全部</button>
+      <button class="filter-chip" data-v="灵感" onclick="setFilter(this)">灵感</button>
+      <button class="filter-chip" data-v="思考" onclick="setFilter(this)">思考</button>
+      <button class="filter-chip" data-v="梦境" onclick="setFilter(this)">梦境</button>
+      <button class="filter-chip" data-v="观察" onclick="setFilter(this)">观察</button>
+      <button class="filter-chip" data-v="感悟" onclick="setFilter(this)">感悟</button>
+    </div>
+    <div id="entry-list" class="entry-list"></div>
+  </div>
+</div>
+
+<div id="pg-export" class="page">
+  <div class="export-wrap page-scroll">
+    <div class="export-title">备份 &amp; 导出</div>
+    <div class="export-desc">数据存储在本设备浏览器中。建议定期导出备份，防止数据丢失。</div>
+    <button class="export-btn export-btn-main" onclick="exportJSON()">
+      <div class="ebtn-title">导出为 JSON 文件</div>
+      <div class="ebtn-sub">完整数据备份，可重新导入恢复</div>
+    </button>
+    <button class="export-btn" onclick="exportTXT()">
+      <div class="ebtn-title">导出为文本文件</div>
+      <div class="ebtn-sub">纯文字版本，便于阅读和分享</div>
+    </button>
+    <button class="export-btn" onclick="triggerImport()">
+      <div class="ebtn-title">从 JSON 文件导入</div>
+      <div class="ebtn-sub">恢复之前导出的备份数据</div>
+    </button>
+    <input type="file" id="import-input" accept=".json" style="display:none" onchange="importJSON(event)">
+    <div style="margin-top:24px;padding-top:18px;border-top:0.5px solid var(--border)">
+      <div class="export-title" style="color:#a00;font-size:14px">危险操作</div>
+      <div style="font-size:13px;color:var(--text-2);margin:6px 0 14px;line-height:1.6">清空后无法恢复，请先导出备份。</div>
+      <button class="export-btn" style="color:#a00;border-color:#f99" onclick="clearAll()">
+        <div class="ebtn-title">清空全部记录</div>
+        <div class="ebtn-sub">不可撤销，请谨慎操作</div>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Search overlay -->
+<div class="overlay" id="overlay">
+  <div class="overlay-nav">
+    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="flex-shrink:0">
+      <circle cx="6.5" cy="6.5" r="4" stroke="#aaa" stroke-width="1.3"/>
+      <path d="M10 10l3 3" stroke="#aaa" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <input type="search" id="search-input" placeholder="搜索灵感..." oninput="doSearch()" autofocus>
+    <span class="overlay-close" onclick="closeSearch()">取消</span>
+  </div>
+  <div class="search-results" id="search-results"></div>
+</div>
+
+<!-- Bottom tab bar -->
+<div class="tabbar">
+  <div class="tb-item on" onclick="switchTab('write')" id="tb-write">
+    <svg class="tb-icon" viewBox="0 0 22 22" fill="none">
+      <path d="M5 17l2-1 9-9-1-1-9 9-1 2z" stroke="#aaa" stroke-width="1.3" stroke-linejoin="round"/>
+      <path d="M14 5l2 2" stroke="#aaa" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <span class="tb-label">记录</span>
+  </div>
+  <div class="tb-item" onclick="switchTab('read')" id="tb-read">
+    <svg class="tb-icon" viewBox="0 0 22 22" fill="none">
+      <rect x="4" y="4" width="14" height="14" rx="3" stroke="#aaa" stroke-width="1.3"/>
+      <path d="M7 8h8M7 11h8M7 14h5" stroke="#aaa" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <span class="tb-label">日记</span>
+  </div>
+  <div class="tb-item" onclick="switchTab('export')" id="tb-export">
+    <svg class="tb-icon" viewBox="0 0 22 22" fill="none">
+      <path d="M11 14V4M8 7l3-3 3 3" stroke="#aaa" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+      <path d="M5 17h12" stroke="#aaa" stroke-width="1.3" stroke-linecap="round"/>
+    </svg>
+    <span class="tb-label">导出</span>
+  </div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+var DB_KEY = 'idea_diary_v2';
+var data = [];
+var selMood = '灵感';
+var selTags = [];
+var curFilter = '全部';
+
+function loadData() {
+  try {
+    var raw = localStorage.getItem(DB_KEY);
+    data = raw ? JSON.parse(raw) : [];
+  } catch(e) { data = []; }
+}
+
+function saveData() {
+  try { localStorage.setItem(DB_KEY, JSON.stringify(data)); } catch(e) {}
+}
+
+loadData();
+
+document.getElementById('moods').addEventListener('click', function(e) {
+  var b = e.target.closest('.mood-btn');
+  if (!b) return;
+  document.querySelectorAll('.mood-btn').forEach(function(x) { x.classList.remove('on'); });
+  b.classList.add('on');
+  selMood = b.dataset.v;
+});
+
+document.getElementById('tag-row').addEventListener('click', function(e) {
+  var b = e.target.closest('.tag-btn');
+  if (!b) return;
+  b.classList.toggle('on');
+  var v = b.dataset.v;
+  var i = selTags.indexOf(v);
+  if (i >= 0) selTags.splice(i, 1); else selTags.push(v);
+});
+
+document.getElementById('ta').addEventListener('input', function() {
+  document.getElementById('cc').textContent = this.value.length + ' 字';
+});
+
+function save() {
+  var t = document.getElementById('ta').value.trim();
+  if (!t) { toast('写点什么再记录吧~'); return; }
+  data.unshift({ id: Date.now(), text: t, mood: selMood, tags: selTags.slice(), time: new Date().toISOString() });
+  saveData();
+  document.getElementById('ta').value = '';
+  document.getElementById('cc').textContent = '0 字';
+  selTags.length = 0;
+  document.querySelectorAll('.tag-btn').forEach(function(b) { b.classList.remove('on'); });
+  toast('灵感已记录');
+  updateStats();
+}
+
+function setFilter(el) {
+  document.querySelectorAll('.filter-chip').forEach(function(c) { c.classList.remove('on'); });
+  el.classList.add('on');
+  curFilter = el.dataset.v;
+  renderEntries();
+}
+
+function del(id) {
+  if (!confirm('确定删除这条记录？')) return;
+  data = data.filter(function(e) { return e.id !== id; });
+  saveData();
+  renderEntries();
+  updateStats();
+}
+
+function renderEntries(list) {
+  var filtered = list || (curFilter === '全部' ? data : data.filter(function(e) { return e.mood === curFilter; }));
+  var el = document.getElementById('entry-list');
+  if (!filtered.length) {
+    el.innerHTML = '<div class="empty-tip"><svg class="empty-icon" viewBox="0 0 44 44" fill="none"><circle cx="22" cy="22" r="18" stroke="#888" stroke-width="1.5"/><path d="M15 22h14M22 15v14" stroke="#888" stroke-width="1.5" stroke-linecap="round"/></svg>暂无记录<br>去记录第一条灵感吧</div>';
+    return;
+  }
+  el.innerHTML = filtered.map(function(e) {
+    var d = new Date(e.time);
+    var ds = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var tags = e.tags.map(function(t) { return '<span class="entry-tag">' + esc(t) + '</span>'; }).join('');
+    return '<div class="entry-card"><div class="entry-head"><div class="entry-meta"><span class="entry-mood">' + esc(e.mood) + '</span><span class="entry-date">' + ds + '</span></div><button class="entry-del" onclick="del(' + e.id + ')">删除</button></div><div class="entry-text">' + esc(e.text) + '</div>' + (tags ? '<div class="entry-tags">' + tags + '</div>' : '') + '</div>';
+  }).join('');
+}
+
+function updateStats() {
+  document.getElementById('s1').textContent = data.length;
+  var today = new Date().toDateString();
+  document.getElementById('s2').textContent = data.filter(function(e) { return new Date(e.time).toDateString() === today; }).length;
+  var days = new Set(data.map(function(e) { return new Date(e.time).toDateString(); }));
+  var streak = 0, d = new Date();
+  while (days.has(d.toDateString())) { streak++; d.setDate(d.getDate()-1); }
+  document.getElementById('s3').textContent = streak;
+  document.getElementById('nav-sub').textContent = data.length ? '共 ' + data.length + ' 条灵感' : '捕捉每一个闪光时刻';
+}
+
+function switchTab(name) {
+  ['write','read','export'].forEach(function(n) {
+    document.getElementById('pg-'+n).classList.toggle('on', n===name);
+    document.getElementById('tb-'+n).classList.toggle('on', n===name);
+  });
+  if (name === 'read') renderEntries();
+  if (name === 'write') updateStats();
+}
+
+function openSearch() {
+  document.getElementById('overlay').classList.add('on');
+  setTimeout(function() { document.getElementById('search-input').focus(); }, 80);
+}
+
+function closeSearch() {
+  document.getElementById('overlay').classList.remove('on');
+  document.getElementById('search-input').value = '';
+  document.getElementById('search-results').innerHTML = '';
+}
+
+function doSearch() {
+  var q = document.getElementById('search-input').value.trim();
+  var res = document.getElementById('search-results');
+  if (!q) { res.innerHTML = ''; return; }
+  var found = data.filter(function(e) { return e.text.includes(q) || e.mood.includes(q) || e.tags.some(function(t) { return t.includes(q); }); });
+  if (!found.length) { res.innerHTML = '<div class="empty-tip">没有找到相关记录</div>'; return; }
+  var html = found.map(function(e) {
+    var d = new Date(e.time);
+    var ds = (d.getMonth()+1) + '月' + d.getDate() + '日 ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    var tags = e.tags.map(function(t) { return '<span class="entry-tag">' + esc(t) + '</span>'; }).join('');
+    var hi = e.text.replace(new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),'g'), '<mark style="background:#EEEDFE;color:#534AB7;">$&</mark>');
+    return '<div class="entry-card"><div class="entry-head"><div class="entry-meta"><span class="entry-mood">' + esc(e.mood) + '</span><span class="entry-date">' + ds + '</span></div></div><div class="entry-text">' + hi + '</div>' + (tags ? '<div class="entry-tags">' + tags + '</div>' : '') + '</div>';
+  }).join('');
+  res.innerHTML = html;
+}
+
+function exportJSON() {
+  var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  download(blob, '灵感日记本_' + dateStr() + '.json');
+  toast('已导出 JSON 文件');
+}
+
+function exportTXT() {
+  var lines = data.map(function(e) {
+    var d = new Date(e.time);
+    var ds = d.getFullYear() + '-' + pad(d.getMonth()+1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    return '【' + e.mood + '】' + ds + (e.tags.length ? ' #' + e.tags.join(' #') : '') + '\n' + e.text + '\n';
+  });
+  var blob = new Blob([lines.join('\n---\n\n')], { type: 'text/plain;charset=utf-8' });
+  download(blob, '灵感日记本_' + dateStr() + '.txt');
+  toast('已导出文本文件');
+}
+
+function triggerImport() {
+  document.getElementById('import-input').click();
+}
+
+function importJSON(e) {
+  var file = e.target.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var imported = JSON.parse(ev.target.result);
+      if (!Array.isArray(imported)) throw new Error();
+      var oldIds = new Set(data.map(function(x) { return x.id; }));
+      var added = imported.filter(function(x) { return !oldIds.has(x.id); });
+      data = data.concat(added);
+      data.sort(function(a,b) { return b.id - a.id; });
+      saveData();
+      updateStats();
+      toast('导入成功，新增 ' + added.length + ' 条');
+    } catch(err) {
+      toast('文件格式错误，导入失败');
+    }
+    e.target.value = '';
+  };
+  reader.readAsText(file);
+}
+
+function clearAll() {
+  if (!confirm('确定清空全部 ' + data.length + ' 条记录？此操作不可恢复。')) return;
+  data = [];
+  saveData();
+  updateStats();
+  renderEntries();
+  toast('已清空');
+}
+
+function download(blob, name) {
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  setTimeout(function() { URL.revokeObjectURL(a.href); }, 1000);
+}
+
+function dateStr() {
+  var d = new Date();
+  return d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate());
+}
+
+function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function toast(m) {
+  var t = document.getElementById('toast');
+  t.textContent = m;
+  t.classList.add('v');
+  clearTimeout(t._tid);
+  t._tid = setTimeout(function() { t.classList.remove('v'); }, 1800);
+}
+
+updateStats();
+</script>
+</body>
+</html>
